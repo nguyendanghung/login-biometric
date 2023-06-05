@@ -1,20 +1,81 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, AppState } from 'react-native';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as LocalAuthentication from 'expo-local-authentication';
+import BackgroundTimer from 'react-native-background-timer';
 
-export default function App() {
+import LoginScreen from './src/Login';
+import Home from './src/Home';
+
+
+const Stack = createNativeStackNavigator();
+
+function App() {
+
+  const appState = useRef(AppState.currentState);
+  const [appStateVisible, setAppStateVisible] = useState(appState.current);
+  const [countTimeBackground, setCountTimeBackground] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        BackgroundTimer.runBackgroundTimer(() => { 
+          setCountTimeBackground((prev) => prev + 1);
+          console.log('coubnt');
+        }, 1000);
+        BackgroundTimer.setTimeout(() => {
+          BackgroundTimer.stopBackgroundTimer();
+        }, 7000)
+      }
+
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        console.log('timeBackGround', countTimeBackground);
+        if (countTimeBackground > 5) {
+          handleBiometricAuth()
+        }
+        BackgroundTimer.stopBackgroundTimer();
+        setCountTimeBackground(0);
+      }
+      appState.current = nextAppState;
+      setAppStateVisible(appState.current);
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, [countTimeBackground]);
+
+  useEffect(() => {
+    handleBiometricAuth()
+  }, [])
+
+  const handleBiometricAuth = async () => {  
+    setIsLoading(true);
+    try {
+      const biometricAuth = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Login with Biometrics',
+      });
+      console.log('biometricAuth', biometricAuth)
+      if (biometricAuth.success) {
+        alert('Success' );
+      } else {
+        alert('Failed to authenticate, reason: ' + result.error);
+      }
+    } finally {
+        setIsLoading(false)
+    }
+    
+  }
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Home" component={Home} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default App;
