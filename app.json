@@ -18,7 +18,8 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSFaceIDUsageDescription": "Allow $(PRODUCT_NAME) to use Face ID."
-      }
+      },
+      "bundleIdentifier": "hung.test.biometric"
     },
     "android": {
       "adaptiveIcon": {
@@ -41,8 +42,9 @@
           "faceIDPermission": "Allow $(PRODUCT_NAME) to use Face ID."
         }
       ],
-      ["./plugins/withAndroidNamespace"]
-      
+      [
+        "./plugins/withAndroidNamespace"
+      ]
     ]
   }
 }
