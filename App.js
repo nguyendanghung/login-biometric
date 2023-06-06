@@ -7,6 +7,7 @@ import BackgroundTimer from 'react-native-background-timer';
 
 import LoginScreen from './src/Login';
 import Home from './src/Home';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const Stack = createNativeStackNavigator();
@@ -22,18 +23,20 @@ function App() {
     const subscription = AppState.addEventListener('change', nextAppState => {
       
       if (nextAppState === 'background' || nextAppState === 'inactive') {
+        // BackgroundTimer.clearTimeout(timeOutTimer);
         BackgroundTimer.runBackgroundTimer(() => { 
           setCountTimeBackground((prev) => prev + 1);
           console.log('coubnt');
         }, 1000);
-        BackgroundTimer.setTimeout(() => {
-          BackgroundTimer.stopBackgroundTimer();
-        }, 7000)
+        // const timeOutTimer = BackgroundTimer.setTimeout(() => {
+        //   BackgroundTimer.stopBackgroundTimer();
+        //   console.log('stop');
+        // }, 35000)
       }
 
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         console.log('timeBackGround', countTimeBackground);
-        if (countTimeBackground > 5) {
+        if (countTimeBackground > 10) {
           handleBiometricAuth()
         }
         BackgroundTimer.stopBackgroundTimer();
@@ -48,6 +51,10 @@ function App() {
   }, [countTimeBackground]);
 
   useEffect(() => {
+    if (countTimeBackground > 11) BackgroundTimer.stopBackgroundTimer();
+  }, [countTimeBackground])
+
+  useEffect(() => {
     handleBiometricAuth()
   }, [])
 
@@ -56,6 +63,8 @@ function App() {
     try {
       const biometricAuth = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Login with Biometrics',
+        disableDeviceFallback: true,
+        cancelLabel: 'Cancel'
       });
       console.log('biometricAuth', biometricAuth)
       if (biometricAuth.success) {
